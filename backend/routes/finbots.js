@@ -88,7 +88,7 @@ router.post('/chat', async (req, res) => {
   try {
     const { dataSources = [], messages = [], botName = 'FinBot', systemPrompt = '', dlTablesData = [], preferredChartType = 'bar' } = req.body;
     if (!messages.length) return res.status(400).json({ error: 'No messages provided.' });
-    if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'OPENAI_API_KEY is not configured on the server.' });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
     const result = await runFinBotChat({ userId: req.userId, dataSources, messages, botName, systemPrompt, dlTablesData, preferredChartType });
     res.json(result);
   } catch (err) {

@@ -1,5 +1,5 @@
 const supabase = require('../config/supabase');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // ── Data fetchers per source ─────────────────────────────────────────────────
 
@@ -230,13 +230,13 @@ Order types and required fields:
 IMPORTANT: Use the DB_ID value (e.g. DB_ID:abc123) from the employee/coagent data as employeeId/agentId. If the user's request is ambiguous (e.g. missing salary, personal ID, or date), ask for the missing info before outputting the block. Always show a brief summary of what will happen alongside the action block.`;
 
 // Shared by the web FinBots chat UI (routes/finbots.js) and the Telegram bot —
-// builds the data-source context, runs the OpenAI call, and returns the raw answer.
+// builds the data-source context, runs the Gemini call, and returns the raw answer.
 // Callers are responsible for parsing [ORDER_ACTION]/[CHART] blocks out of the answer.
 async function runFinBotChat({ userId, dataSources = [], messages = [], botName = 'FinBot', systemPrompt = '', dlTablesData = [], preferredChartType = 'bar' }) {
   if (!messages.length) throw new Error('No messages provided.');
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured on the server.');
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured on the server.');
 
   const sourceKeys = dataSources.filter(s => !!SOURCE_FETCHERS[s]);
 
@@ -283,20 +283,33 @@ async function runFinBotChat({ userId, dataSources = [], messages = [], botName 
       : `\n\nNo data sources are connected to this bot. Tell the user to connect data sources in the bot settings.`,
   ].join('');
 
-  const openai = new OpenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash', systemInstruction: systemContent });
 
+  // Gemini has no "assistant" role (it's "model"), and requires the history
+  // to start with a "user" turn -- drop any leading model turns so a bot
+  // greeting inserted as the first message doesn't break that.
   const validRoles = new Set(['user', 'assistant']);
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: systemContent },
-      ...messages
-        .filter(m => validRoles.has(m.role))
-        .map(m => ({ role: m.role, content: m.content })),
-    ],
-  });
+  const contents = messages
+    .filter(m => validRoles.has(m.role))
+    .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  while (contents.length && contents[0].role === 'model') contents.shift();
 
-  return { answer: completion.choices[0]?.message?.content || '' };
+  // Gemini's "high demand" 503s are common enough in practice that a bot
+  // reply shouldn't fail outright on the first one -- retry a couple of
+  // times with a short backoff before giving up.
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await model.generateContent({ contents });
+      return { answer: result.response.text() || '' };
+    } catch (err) {
+      lastErr = err;
+      if (!/503|overloaded|high demand/i.test(err.message || '') || attempt === 2) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 module.exports = { runFinBotChat, SOURCE_FETCHERS };
