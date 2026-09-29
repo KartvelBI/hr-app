@@ -4390,14 +4390,48 @@ export default function Orders() {
     <div style={{ padding: '28px 32px', maxWidth: 1400 }}>
 
       {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{t('orders.title')}</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-3)' }}>
-            {t('orders.subtitle')} · {monthLabel}
-          </p>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{t('orders.title')}</h2>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-3)' }}>
+          {t('orders.subtitle')} · {monthLabel}
+        </p>
+      </div>
+
+      {/* Subtabs + (adjusting only) month picker, columns, export, add-new -- all one row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 2, background: 'var(--surface-2)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+          {ORDER_SUBTABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                if (tab.key === subTab) return;
+                setLoadingSubTab(tab.key);
+                setTimeout(() => setLoadingSubTab(null), 220);
+                setSubTab(tab.key);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '7px 18px', border: 'none', borderRadius: 7,
+                fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                background: subTab === tab.key ? 'var(--surface)' : 'transparent',
+                color: subTab === tab.key ? 'var(--text)' : 'var(--text-3)',
+                boxShadow: subTab === tab.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+              {loadingSubTab === tab.key && <span className="fp-spinner fp-spinner-sm" />}
+            </button>
+          ))}
         </div>
-        {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...INPUT, width: 'auto', padding: '6px 12px', colorScheme: 'dark' }} />
+            <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+          </div>
+          <ColumnVisibilityMenu table={adjustTable} t={t} />
           {sortedUnits.length > 0 && <ExportExcelButton onClick={() => exportOrdersToExcel(sortedUnits, [
             { header: 'Date', get: u => u.date ? new Date(u.date).toLocaleDateString('en-GB') : '' },
             { header: 'Employee', get: u => `${u.employee?.first_name || ''} ${u.employee?.last_name || ''}`.trim() },
@@ -4428,41 +4462,6 @@ export default function Orders() {
         </div>}
       </div>
 
-      {/* Subtabs + month picker (adjusting only) on the same row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 2, background: 'var(--surface-2)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-          {ORDER_SUBTABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                if (tab.key === subTab) return;
-                setLoadingSubTab(tab.key);
-                setTimeout(() => setLoadingSubTab(null), 220);
-                setSubTab(tab.key);
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '7px 18px', border: 'none', borderRadius: 7,
-                fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                background: subTab === tab.key ? 'var(--surface)' : 'transparent',
-                color: subTab === tab.key ? 'var(--text)' : 'var(--text-3)',
-                boxShadow: subTab === tab.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.15s',
-              }}
-            >
-              {tab.label}
-              {loadingSubTab === tab.key && <span className="fp-spinner fp-spinner-sm" />}
-            </button>
-          ))}
-        </div>
-
-        {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...INPUT, width: 'auto', padding: '6px 12px', colorScheme: 'dark' }} />
-          <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
-        </div>}
-      </div>
-
       {/* Non-adjusting tabs */}
       <div key={subTab} className="fp-subtab-enter">
         {subTab === 'promotion'        && <PromotionTab employees={employees} />}
@@ -4475,11 +4474,6 @@ export default function Orders() {
       </div>
 
       {subTab === 'adjusting' && <>
-      {/* Column visibility */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 16 }}>
-        <ColumnVisibilityMenu table={adjustTable} t={t} />
-      </div>
-
       {/* Orders list */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
