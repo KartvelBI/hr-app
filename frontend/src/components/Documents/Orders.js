@@ -4428,31 +4428,39 @@ export default function Orders() {
         </div>}
       </div>
 
-      {/* Subtabs */}
-      <div style={{ display: 'flex', gap: 2, background: 'var(--surface-2)', borderRadius: 10, padding: 4, width: 'fit-content', marginBottom: 24 }}>
-        {ORDER_SUBTABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              if (tab.key === subTab) return;
-              setLoadingSubTab(tab.key);
-              setTimeout(() => setLoadingSubTab(null), 220);
-              setSubTab(tab.key);
-            }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              padding: '7px 18px', border: 'none', borderRadius: 7,
-              fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-              background: subTab === tab.key ? 'var(--surface)' : 'transparent',
-              color: subTab === tab.key ? 'var(--text)' : 'var(--text-3)',
-              boxShadow: subTab === tab.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            {tab.label}
-            {loadingSubTab === tab.key && <span className="fp-spinner fp-spinner-sm" />}
-          </button>
-        ))}
+      {/* Subtabs + month picker (adjusting only) on the same row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 2, background: 'var(--surface-2)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+          {ORDER_SUBTABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                if (tab.key === subTab) return;
+                setLoadingSubTab(tab.key);
+                setTimeout(() => setLoadingSubTab(null), 220);
+                setSubTab(tab.key);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '7px 18px', border: 'none', borderRadius: 7,
+                fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                background: subTab === tab.key ? 'var(--surface)' : 'transparent',
+                color: subTab === tab.key ? 'var(--text)' : 'var(--text-3)',
+                boxShadow: subTab === tab.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+              {loadingSubTab === tab.key && <span className="fp-spinner fp-spinner-sm" />}
+            </button>
+          ))}
+        </div>
+
+        {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+          <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...INPUT, width: 'auto', padding: '6px 12px', colorScheme: 'dark' }} />
+          <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+        </div>}
       </div>
 
       {/* Non-adjusting tabs */}
@@ -4465,13 +4473,6 @@ export default function Orders() {
         {subTab === 'handover'         && <HandoverTab employees={employees} />}
         {subTab === 'bonus'            && <BonusTab employees={employees} gelRate={gelRate} eurRate={eurRate} />}
       </div>
-
-      {/* Month picker — adjusting only */}
-      {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-        <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-        <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...INPUT, width: 'auto', padding: '6px 12px', colorScheme: 'dark' }} />
-        <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
-      </div>}
 
       {subTab === 'adjusting' && <>
       {/* Column visibility */}
