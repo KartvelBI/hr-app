@@ -27,13 +27,13 @@ export const NAV_ORDER_KEY = 'nav_order';
 export const NAV_KEYS_DEFAULT = ['home', 'analytics', 'documents', 'accounting', 'options'];
 
 export const ACC_SIDEBAR_ORDER_KEY = 'acc_sidebar_order';
-export const ACC_SIDEBAR_DEFAULT = ['bookkeeping', 'purchases', 'sales', 'projects', 'invoices', 'salary-accrual', 'stock', 'calendar', 'transfers', 'orders', 'requests', 'ai-agent'];
+export const ACC_SIDEBAR_DEFAULT = ['bookkeeping', 'purchases', 'sales', 'projects', 'invoices', 'salary-accrual', 'stock', 'calendar', 'transfers', 'orders', 'ai-agent'];
 
 export const OPT_SIDEBAR_ORDER_KEY = 'opt_sidebar_order';
 export const OPT_SIDEBAR_DEFAULT = ['holidays', 'info', 'pagination', 'tax', 'language', 'navorder', 'accounts', 'users', 'hierarchy', 'tools', 'telegram', 'whatsapp', 'appearance', 'about'];
 
 export const DOCS_SIDEBAR_ORDER_KEY = 'docs_sidebar_order';
-export const DOCS_SIDEBAR_DEFAULT = ['journal', 'employees', 'agents', 'agreements', 'devices', 'nbg-rates', 'datalake', 'banking', 'rsge'];
+export const DOCS_SIDEBAR_DEFAULT = ['journal', 'requests', 'employees', 'agents', 'agreements', 'devices', 'nbg-rates', 'datalake', 'banking', 'rsge'];
 
 export const NAV_HIDDEN_KEY = 'nav_hidden';
 export const ACC_SIDEBAR_HIDDEN_KEY = 'acc_sidebar_hidden';
@@ -80,6 +80,7 @@ const NAV_ICONS = {
 };
 
 const DOCS_ICONS = {
+  requests: listIcon(InboxIcon),
   employees: listIcon(UserGroupIcon),
   agents: listIcon(Briefcase01Icon),
   agreements: listIcon(Agreement01Icon),
@@ -91,7 +92,6 @@ const DOCS_ICONS = {
 };
 
 const ACC_ICONS = {
-  requests: listIcon(InboxIcon),
   bookkeeping: listIcon(Book01Icon),
   purchases: listIcon(ShoppingCart01Icon),
   sales: listIcon(SaleTag01Icon),
@@ -268,12 +268,11 @@ function NavOrderSettings() {
     bookkeeping: t('acc.bookkeeping'), purchases: t('acc.purchases'), sales: t('acc.sales'),
     projects: t('acc.projects'), invoices: t('acc.invoices'), 'salary-accrual': t('acc.salaries'), stock: t('acc.stock'),
     calendar: t('acc.calendar'), transfers: t('acc.transfers'), 'ai-agent': t('docs.finbot'),
-    orders: t('docs.orders'), requests: t('docs.requests'),
   };
   const docsLabels = {
-    employees: t('docs.employees'), agents: t('docs.agents'),
+    requests: t('docs.requests'), employees: t('docs.employees'), agents: t('docs.agents'),
     agreements: t('docs.agreements'), devices: t('docs.devices'), 'nbg-rates': t('docs.nbgRates'),
-    datalake: t('docs.dataLake'),
+    orders: t('docs.orders'), datalake: t('docs.dataLake'),
     banking: t('acc.banking'), rsge: t('acc.rsge'),
   };
   const optLabels = {

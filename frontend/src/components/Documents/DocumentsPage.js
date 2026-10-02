@@ -10,6 +10,7 @@ import {
   ExchangeDollarIcon,
   ClipboardListIcon,
   Database01Icon,
+  InboxIcon,
   BankIcon,
   SecurityCheckIcon,
 } from '@hugeicons/core-free-icons';
@@ -21,6 +22,7 @@ import Agreements from './Agreements';
 import CurrencyRates from './CurrencyRates';
 import JournalPage from './JournalPage';
 import DataLake from './DataLake';
+import Requests from './Requests';
 import TbcBanking from '../Accounting/TbcBanking';
 import RsGeIntegration from '../Accounting/RsGeIntegration';
 import './Documents.css';
@@ -46,6 +48,9 @@ const TAB_KEYS = [
   )},
   { key: 'datalake', labelKey: 'docs.dataLake', icon: (
     <HugeiconsIcon icon={Database01Icon} size={16} color="#14b8a6" strokeWidth={1.8} />
+  )},
+  { key: 'requests', labelKey: 'docs.requests', icon: (
+    <HugeiconsIcon icon={InboxIcon} size={16} color="#ef4444" strokeWidth={1.8} />
   )},
   { key: 'banking', labelKey: 'acc.banking', icon: (
     <HugeiconsIcon icon={BankIcon} size={16} color="#14b8a6" strokeWidth={1.8} />
@@ -145,6 +150,7 @@ function DocumentsPage() {
             </div>
           )}
           {activeTab === 'datalake' && <DataLake />}
+          {activeTab === 'requests' && <Requests />}
           {activeTab === 'banking' && <TbcBanking />}
           {activeTab === 'rsge' && <RsGeIntegration />}
         </div>
