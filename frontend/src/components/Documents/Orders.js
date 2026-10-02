@@ -328,7 +328,7 @@ function EmptyState({ label, onAdd }) {
 }
 
 // ── Promotion Tab ─────────────────────────────────────────────────────────────
-function PromotionTab({ employees }) {
+function PromotionTab({ employees, registerAdd }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -385,6 +385,7 @@ function PromotionTab({ employees }) {
   const canCreate = perms.create_promotion === 'Yes';
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true); setError(''); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
   const openEdit = (o) => { setEditing(o.id); setForm({ employeeId: o.employeeId, newPosition: o.newPosition, oldSalary: o.oldSalary, newSalary: o.newSalary, effectiveDate: o.effectiveDate, notes: o.notes || '' }); setShowForm(true); setError(''); };
   const openCopy = (o) => { setEditing(null); setForm({ employeeId: o.employeeId, newPosition: o.newPosition, oldSalary: o.oldSalary, newSalary: o.newSalary, effectiveDate: o.effectiveDate, notes: o.notes || '' }); setShowForm(true); setError(''); };
   const close = () => { setShowForm(false); setEditing(null); };
@@ -448,7 +449,6 @@ function PromotionTab({ employees }) {
           { header: 'Effective Date', get: o => o.effectiveDate || '' },
           { header: 'Notes', get: o => o.notes || '' },
         ], 'Promotion', 'Promotion-Orders')} />}
-        {canCreate && <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ {t('orders.addNew')}</button>}
       </div>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
@@ -550,7 +550,7 @@ function PromotionTab({ employees }) {
 }
 
 // ── Hiring Tab ────────────────────────────────────────────────────────────────
-function HiringTab() {
+function HiringTab({ registerAdd }) {
   const { t } = useLanguage();
   const { orders, add, update, remove } = useLocalOrders('hr_hiring_orders');
   const [showForm, setShowForm] = useState(false);
@@ -615,6 +615,7 @@ function HiringTab() {
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setAccruedInput(''); setActiveTab('info'); setShowForm(true); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
   const openEdit = (o) => {
     setEditing(o.id);
     setForm({
@@ -715,7 +716,6 @@ function HiringTab() {
           { header: 'Address', get: o => o.address || '' },
           { header: 'Notes', get: o => o.notes || '' },
         ], 'Hiring', 'Hiring-Orders')} />}
-        {canCreate && <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ {t('orders.addNew')}</button>}
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
@@ -1589,7 +1589,7 @@ const btnStyle = (color) => ({
 });
 
 // ── Firing Tab ────────────────────────────────────────────────────────────────
-function FiringTab({ employees }) {
+function FiringTab({ employees, registerAdd }) {
   const { t } = useLanguage();
   const { orders: localOrders, add, update, remove } = useLocalOrders('hr_firing_orders', o => employees.some(e => e.id === o.employeeId));
 
@@ -1637,6 +1637,7 @@ function FiringTab({ employees }) {
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
   const openEdit = (o) => { setEditing(o.id); setForm({ employeeId: o.employeeId, terminationDate: o.terminationDate, reason: o.reason, notes: o.notes || '' }); setShowForm(true); };
   const openCopy = (o) => { setEditing(null); setForm({ employeeId: o.employeeId, terminationDate: o.terminationDate, reason: o.reason, notes: o.notes || '' }); setShowForm(true); };
   const close = () => { setShowForm(false); setEditing(null); };
@@ -1666,7 +1667,6 @@ function FiringTab({ employees }) {
           { header: 'Reason', get: o => o.reason || '' },
           { header: 'Notes', get: o => o.notes || '' },
         ], 'Firing', 'Firing-Orders')} />}
-        {canCreate && <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ {t('orders.addNew')}</button>}
       </div>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {orders.length === 0 ? <EmptyState label={t('orders.firing')} onAdd={canCreate ? openAdd : undefined} /> : (
@@ -1960,7 +1960,7 @@ function TripCosts({ tripId, onCostsChanged }) {
   );
 }
 
-function BusinessTripTab({ employees }) {
+function BusinessTripTab({ employees, registerAdd }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -2058,6 +2058,7 @@ function BusinessTripTab({ employees }) {
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setCountrySearch(''); setEmpSearch(''); setModalTab('details'); setShowForm(true); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
   const openEdit = (o) => {
     setEditing(o.id);
     setForm({ employeeId: o.employeeId, employeeIds: [], isGroup: false, fromDate: o.fromDate, toDate: o.toDate, countryCode: o.countryCode, countryName: o.countryName, cityName: o.cityName || '', perDiem: o.perDiem || '', amount: o.amount || '', notes: o.notes || '' });
@@ -2149,9 +2150,6 @@ function BusinessTripTab({ employees }) {
           { header: 'Total Costs', get: o => o.totalCosts || 0 },
           { header: 'Notes', get: o => o.notes || '' },
         ], 'Business Trip', 'Business-Trip-Orders')} />}
-        {canCreate && <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#0ea5e9', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          + New Business Trip
-        </button>}
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
@@ -2542,7 +2540,7 @@ function BusinessTripTab({ employees }) {
 }
 
 // ── Advance Payment Tab ───────────────────────────────────────────────────────
-function AdvancePaymentTab({ employees, gelRate, eurRate }) {
+function AdvancePaymentTab({ employees, gelRate, eurRate, registerAdd }) {
   const { t } = useLanguage();
   const { orders, add, update, remove } = useLocalOrders('hr_advance_payment_orders', o => employees.some(e => e.id === o.employeeId));
   const [showForm, setShowForm] = useState(false);
@@ -2799,6 +2797,9 @@ function AdvancePaymentTab({ employees, gelRate, eurRate }) {
   const [detailsFor, setDetailsFor] = useState(null);
   const CURR_SYMBOLS = { GEL: '₾', USD: '$', EUR: '€' };
 
+  const openAdd = () => { setEditId(null); setForm(EMPTY); setShowForm(true); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
@@ -2811,15 +2812,11 @@ function AdvancePaymentTab({ employees, gelRate, eurRate }) {
           { header: 'Include in Salary', get: o => o.includeInSalary !== false ? 'Yes' : 'No' },
           { header: 'Schedule', get: o => (o.schedule || []).map(s => `${s.month}: ${s.amount}`).join('; ') },
         ], 'Advance Payment', 'Advance-Payment-Orders')} />}
-        <button onClick={() => { setEditId(null); setForm(EMPTY); setShowForm(true); }}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          + Add New Order
-        </button>
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {orders.length === 0 ? (
-          <EmptyState label="Advance Payment" onAdd={() => { setEditId(null); setForm(EMPTY); setShowForm(true); }} />
+          <EmptyState label="Advance Payment" onAdd={openAdd} />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
@@ -3118,7 +3115,7 @@ function AdvancePaymentTab({ employees, gelRate, eurRate }) {
 }
 
 // ── Bonus Tab (bulk upload) ─────────────────────────────────────────────────────
-function BonusTab({ employees, gelRate, eurRate }) {
+function BonusTab({ employees, gelRate, eurRate, registerAdd }) {
   const { t } = useLanguage();
   const { orders: localOrders, add, update, remove } = useLocalOrders('hr_bonus_orders', o => (o.entries || []).some(en => employees.some(e => e.id === en.employeeId)));
   const [showForm, setShowForm] = useState(false);
@@ -3307,6 +3304,7 @@ function BonusTab({ employees, gelRate, eurRate }) {
   };
 
   const openNew = () => { setEditId(null); setForm(EMPTY); setSearch(''); setShowForm(true); setError(''); setBulkError(''); setBulkSummary(null); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openNew; });
 
   const openEdit = (o) => {
     setEditId(o.id);
@@ -3418,10 +3416,6 @@ function BonusTab({ employees, gelRate, eurRate }) {
             { header: 'Currency', get: r => r.currency || '' },
             { header: 'Purpose', get: r => r.purpose || '' },
           ], 'Bonus', 'Bonus-Orders')} />}
-        <button onClick={openNew}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          + Add New Order
-        </button>
       </div>
 
       {liveLoadFailed && (
@@ -3636,7 +3630,7 @@ function BonusTab({ employees, gelRate, eurRate }) {
 }
 
 // ── Handover Tab ──────────────────────────────────────────────────────────────
-function HandoverTab({ employees }) {
+function HandoverTab({ employees, registerAdd }) {
   const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3667,6 +3661,7 @@ function HandoverTab({ employees }) {
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true); setError(''); };
+  useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
   const openEdit = (o) => {
     setEditing(o.id);
     setForm({ fromEmployeeId: o.fromEmployeeId, toEmployeeId: o.toEmployeeId, handoverDate: o.handoverDate, items: o.items || '', notes: o.notes || '', immediateEffect: o.immediateEffect !== false });
@@ -3725,9 +3720,6 @@ function HandoverTab({ employees }) {
           { header: 'Items', get: o => o.items || '' },
           { header: 'Notes', get: o => o.notes || '' },
         ], 'Handover', 'Handover-Orders')} />}
-        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 9, border: 'none', background: '#479c73', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          + {t('orders.addNew')}
-        </button>
       </div>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
@@ -4077,7 +4069,20 @@ export default function Orders() {
   const [detailsForUnit, setDetailsForUnit] = useState(null);
 
   const perms = useOrdersPermissions();
-  const canCreateAdjusting = perms.create_adjusting === 'Yes';
+
+  // Shared "+ New Order" trigger for every sub-tab -- each tab registers its
+  // own openAdd function here on mount, so one button in the shared toolbar
+  // can open whichever tab is currently active without each tab needing its
+  // own separately-positioned button.
+  const addTriggerRef = useRef(null);
+  const SUBTAB_CREATE_PERM = {
+    hiring: 'create_hiring', firing: 'create_firing', promotion: 'create_promotion',
+    adjusting: 'create_adjusting', 'business-trip': 'create_business_trip',
+  };
+  const canCreateCurrentTab = (() => {
+    const permKey = SUBTAB_CREATE_PERM[subTab];
+    return permKey ? perms[permKey] === 'Yes' : true; // advance-payment/handover/bonus have no gate today
+  })();
 
   // ── Data loading ────────────────────────────────────────────
   const loadStatic = useCallback(async () => {
@@ -4397,8 +4402,8 @@ export default function Orders() {
         </p>
       </div>
 
-      {/* Subtabs + (adjusting only) month picker, columns, export, add-new -- all one row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      {/* Subtabs + the one shared "+ New Order" button -- always on one row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: subTab === 'adjusting' ? 14 : 24 }}>
         <div style={{ display: 'flex', gap: 2, background: 'var(--surface-2)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
           {ORDER_SUBTABS.map(tab => (
             <button
@@ -4425,7 +4430,42 @@ export default function Orders() {
           ))}
         </div>
 
-        {subTab === 'adjusting' && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+        <div style={{ flexShrink: 0 }}>
+          {/* One "+ New Order" button for every sub-tab -- opens whichever
+              tab's own add form is currently active (see addTriggerRef). */}
+          {canCreateCurrentTab && <button
+            onClick={() => {
+              if (subTab === 'adjusting') {
+                setForm(f => ({ ...EMPTY_FORM, date: monthLastDay, otRate: overtimeRates[0] ? String(overtimeRates[0].rate) : '110' }));
+                setShowForm(true);
+                setError('');
+              } else {
+                addTriggerRef.current?.();
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '9px 20px', borderRadius: 9, border: 'none',
+              background: '#479c73', color: '#fff',
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(71,156,115,0.3)', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            {t('orders.addNew')}
+          </button>}
+        </div>
+      </div>
+
+      {/* Adjusting-only: month picker, columns, export -- own row so the
+          tabs + "+ New Order" row above always stays on a single line
+          regardless of viewport width. */}
+      {subTab === 'adjusting' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
             <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...INPUT, width: 'auto', padding: '6px 12px', colorScheme: 'dark' }} />
@@ -4442,35 +4482,18 @@ export default function Orders() {
             { header: 'Include in Salary', get: u => u.include_in_salary !== false ? 'Yes' : 'No' },
             { header: 'Note', get: u => u.note || '' },
           ], 'Adjusting', 'Adjusting-Orders')} />}
-          {canCreateAdjusting && <button
-            onClick={() => { setForm(f => ({ ...EMPTY_FORM, date: monthLastDay, otRate: overtimeRates[0] ? String(overtimeRates[0].rate) : '110' })); setShowForm(true); setError(''); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '9px 20px', borderRadius: 9, border: 'none',
-              background: '#479c73', color: '#fff',
-              fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(71,156,115,0.3)', transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {t('orders.addNew')}
-          </button>}
-        </div>}
-      </div>
+        </div>
+      )}
 
       {/* Non-adjusting tabs */}
       <div key={subTab} className="fp-subtab-enter">
-        {subTab === 'promotion'        && <PromotionTab employees={employees} />}
-        {subTab === 'hiring'           && <HiringTab />}
-        {subTab === 'firing'           && <FiringTab employees={employees} />}
-        {subTab === 'business-trip'    && <BusinessTripTab employees={employees} />}
-        {subTab === 'advance-payment'  && <AdvancePaymentTab employees={employees} gelRate={gelRate} eurRate={eurRate} />}
-        {subTab === 'handover'         && <HandoverTab employees={employees} />}
-        {subTab === 'bonus'            && <BonusTab employees={employees} gelRate={gelRate} eurRate={eurRate} />}
+        {subTab === 'promotion'        && <PromotionTab employees={employees} registerAdd={addTriggerRef} />}
+        {subTab === 'hiring'           && <HiringTab registerAdd={addTriggerRef} />}
+        {subTab === 'firing'           && <FiringTab employees={employees} registerAdd={addTriggerRef} />}
+        {subTab === 'business-trip'    && <BusinessTripTab employees={employees} registerAdd={addTriggerRef} />}
+        {subTab === 'advance-payment'  && <AdvancePaymentTab employees={employees} gelRate={gelRate} eurRate={eurRate} registerAdd={addTriggerRef} />}
+        {subTab === 'handover'         && <HandoverTab employees={employees} registerAdd={addTriggerRef} />}
+        {subTab === 'bonus'            && <BonusTab employees={employees} gelRate={gelRate} eurRate={eurRate} registerAdd={addTriggerRef} />}
       </div>
 
       {subTab === 'adjusting' && <>

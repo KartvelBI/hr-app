@@ -900,7 +900,7 @@ const en = {
   'orders.advancePayment': 'Advance Payment',
   'orders.handover': 'Handover',
   'orders.bonus': 'Bonus',
-  'orders.addNew': 'Add New Order',
+  'orders.addNew': 'New Order',
   'orders.loading': 'Loading orders…',
   'orders.noOrders': 'No orders for {month}',
   'orders.noOrdersHint': 'Click "Add New Order" to create the first one.',
