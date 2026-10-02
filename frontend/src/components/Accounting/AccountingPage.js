@@ -14,6 +14,7 @@ import Stock from './Stock';
 import FinBotsPage from './FinBotsPage';
 import JetPage from './JetPage';
 import Orders from '../Documents/Orders';
+import Requests from '../Documents/Requests';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Book01Icon,
@@ -27,6 +28,7 @@ import {
   ChatSpark01Icon,
   ClipboardListIcon,
   Folder01Icon,
+  InboxIcon,
 } from '@hugeicons/core-free-icons';
 import './Accounting.css';
 
@@ -43,6 +45,7 @@ const ICONS = {
   calendar:      accIcon(Calendar03Icon, '#ec4899'),
   transfers:     accIcon(ArrowDataTransferHorizontalIcon, '#06b6d4'),
   orders:        accIcon(ClipboardListIcon, '#f97316'),
+  requests:      accIcon(InboxIcon, '#ef4444'),
   finbot:        accIcon(ChatSpark01Icon, '#ec4899'),
   jet: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -62,6 +65,7 @@ const TAB_KEYS = [
   { key: 'calendar',       labelKey: 'acc.calendar',    icon: ICONS.calendar },
   { key: 'transfers',      labelKey: 'acc.transfers',   icon: ICONS.transfers },
   { key: 'orders',        labelKey: 'docs.orders',     icon: ICONS.orders },
+  { key: 'requests',      labelKey: 'docs.requests',   icon: ICONS.requests },
   { key: 'ai-agent',      labelKey: 'docs.finbot',     icon: ICONS.finbot },
   { key: 'jet',           labelKey: 'acc.jet',         icon: ICONS.jet },
 ];
@@ -169,6 +173,7 @@ function AccountingPage() {
           {activeTab === 'calendar'       && <PaymentCalendar />}
           {activeTab === 'transfers'      && <Transfers />}
           {activeTab === 'orders'         && <Orders />}
+          {activeTab === 'requests'       && <Requests />}
           {activeTab === 'ai-agent'       && <FinBotsPage />}
           {activeTab === 'jet'            && <JetPage />}
         </div>
