@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { resolveUserName } = require('../services/userIdentity');
-const { checkOrderPermission } = require('../middleware/permission');
 
 router.get('/', async (req, res) => {
   try {
@@ -16,7 +15,7 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', checkOrderPermission('create_promotion'), async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { employee_id, old_position, new_position, old_salary, new_salary, effective_date, notes, salary_change_id } = req.body;
     if (!employee_id || !new_position || !new_salary) {
@@ -36,7 +35,7 @@ router.post('/', checkOrderPermission('create_promotion'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', checkOrderPermission('create_promotion'), async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { employee_id, old_position, new_position, old_salary, new_salary, effective_date, notes } = req.body;
     const { data, error } = await supabase.from('promotion_orders').update({
@@ -49,7 +48,7 @@ router.put('/:id', checkOrderPermission('create_promotion'), async (req, res) =>
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', checkOrderPermission('create_promotion'), async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { error } = await supabase.from('promotion_orders').delete().eq('id', req.params.id).eq('user_id', req.userId);
     if (error) throw error;

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { resolveUserName } = require('../services/userIdentity');
-const { checkOrderPermission } = require('../middleware/permission');
 
 router.get('/', async (req, res) => {
   try {
@@ -16,7 +15,7 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', checkOrderPermission('create_handover'), async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { from_employee_id, to_employee_id, handover_date, items, notes } = req.body;
     if (!from_employee_id || !to_employee_id || !handover_date) {
@@ -37,7 +36,7 @@ router.post('/', checkOrderPermission('create_handover'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', checkOrderPermission('create_handover'), async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { from_employee_id, to_employee_id, handover_date, items, notes } = req.body;
     const { data, error } = await supabase.from('handover_orders').update({
@@ -50,7 +49,7 @@ router.put('/:id', checkOrderPermission('create_handover'), async (req, res) => 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', checkOrderPermission('create_handover'), async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { error } = await supabase.from('handover_orders').delete().eq('id', req.params.id).eq('user_id', req.userId);
     if (error) throw error;

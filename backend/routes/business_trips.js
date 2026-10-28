@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { resolveUserName } = require('../services/userIdentity');
-const { checkOrderPermission } = require('../middleware/permission');
 
 router.get('/', async (req, res) => {
   try {
@@ -29,7 +28,7 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', checkOrderPermission('create_business_trip'), async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
       employee_id, group_id, group_name, from_date, to_date,
@@ -53,7 +52,7 @@ router.post('/', checkOrderPermission('create_business_trip'), async (req, res) 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', checkOrderPermission('create_business_trip'), async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const {
       employee_id, group_id, group_name, from_date, to_date,
@@ -71,7 +70,7 @@ router.put('/:id', checkOrderPermission('create_business_trip'), async (req, res
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', checkOrderPermission('create_business_trip'), async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { error } = await supabase.from('business_trip_orders').delete().eq('id', req.params.id).eq('user_id', req.userId);
     if (error) throw error;
@@ -93,7 +92,7 @@ router.get('/:id/costs', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/:id/costs', checkOrderPermission('create_business_trip'), async (req, res) => {
+router.post('/:id/costs', async (req, res) => {
   try {
     const { name, amount, file_name, file_type, file_data } = req.body;
     if (!name) return res.status(400).json({ error: 'name is required' });
@@ -108,7 +107,7 @@ router.post('/:id/costs', checkOrderPermission('create_business_trip'), async (r
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id/costs/:costId', checkOrderPermission('create_business_trip'), async (req, res) => {
+router.delete('/:id/costs/:costId', async (req, res) => {
   try {
     const { error } = await supabase.from('business_trip_costs').delete()
       .eq('id', req.params.costId).eq('trip_id', req.params.id).eq('user_id', req.userId);

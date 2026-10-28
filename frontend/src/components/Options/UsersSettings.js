@@ -86,16 +86,13 @@ const ORDER_PERMISSION_COLS = [
   { key: 'create_promotion',     label: 'Create Promotion' },
   { key: 'create_adjusting',     label: 'Create Adjusting' },
   { key: 'create_business_trip', label: 'Create Business Trip' },
-  { key: 'create_advance_payment', label: 'Create Advance Payment' },
-  { key: 'create_bonus',         label: 'Create Bonus' },
-  { key: 'create_handover',      label: 'Create Handover' },
   { key: 'view_orders',          label: 'View Orders' },
 ];
 
 const DEFAULT_ORDERS_MATRIX = [
-  { role: 'Super Admin',         description: 'Full access to all orders',   create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', create_advance_payment: 'Yes', create_bonus: 'Yes', create_handover: 'Yes', view_orders: 'Yes' },
-  { role: 'Admin',               description: 'Can manage most orders',      create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', create_advance_payment: 'Yes', create_bonus: 'Yes', create_handover: 'Yes', view_orders: 'Yes' },
-  { role: 'Member',              description: 'Standard access',             create_hiring: 'No',  create_firing: 'No',  create_promotion: 'No',  create_adjusting: 'No',  create_business_trip: 'Yes', create_advance_payment: 'No', create_bonus: 'No', create_handover: 'No', view_orders: 'Own only' },
+  { role: 'Super Admin',         description: 'Full access to all orders',   create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', view_orders: 'Yes' },
+  { role: 'Admin',               description: 'Can manage most orders',      create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', view_orders: 'Yes' },
+  { role: 'Member',              description: 'Standard access',             create_hiring: 'No',  create_firing: 'No',  create_promotion: 'No',  create_adjusting: 'No',  create_business_trip: 'Yes', view_orders: 'Own only' },
 ];
 
 function UsersSettings() {
@@ -121,8 +118,6 @@ function UsersSettings() {
 
   const [ordersMatrixRows, setOrdersMatrixRows] = useState(null);
   const [ordersMatrixDirty, setOrdersMatrixDirty] = useState(false);
-  const [ordersMatrixSaving, setOrdersMatrixSaving] = useState(false);
-  const [ordersMatrixError, setOrdersMatrixError] = useState('');
 
   const [notifMatrixRows, setNotifMatrixRows] = useState(null);
   const [notifMatrixDirty, setNotifMatrixDirty] = useState(false);
@@ -225,36 +220,19 @@ function UsersSettings() {
     setMatrixDirty(true);
   };
 
-  // Orders Matrix lives on the server (shared by everyone, enforced there). A matrix that
-  // was only ever saved in this browser is offered as unsaved changes the first time.
-  const loadOrdersMatrix = async () => {
-    setOrdersMatrixError('');
+  const loadOrdersMatrix = () => {
     try {
-      const res = await api.get('/orders-matrix');
-      const rows = res.data.rows || [];
-      let local = [];
-      try { local = JSON.parse(localStorage.getItem('orders_matrix') || '[]'); } catch {}
-      if (rows.length === 0 && local.length > 0) {
-        setOrdersMatrixRows(local);
-        setOrdersMatrixDirty(true);
-      } else {
-        setOrdersMatrixRows(rows);
-      }
-    } catch (err) {
+      const local = localStorage.getItem('orders_matrix');
+      setOrdersMatrixRows(local ? JSON.parse(local) : []);
+    } catch {
       setOrdersMatrixRows([]);
-      setOrdersMatrixError(err.response?.data?.error || 'Could not load the Orders Matrix.');
     }
   };
 
-  const saveOrdersMatrix = async () => {
-    setOrdersMatrixSaving(true); setOrdersMatrixError('');
-    try {
-      await api.put('/orders-matrix', { rows: ordersMatrixRows });
-      localStorage.removeItem('orders_matrix');
-      setOrdersMatrixDirty(false);
-    } catch (err) {
-      setOrdersMatrixError(err.response?.data?.error || 'Failed to save.');
-    } finally { setOrdersMatrixSaving(false); }
+  const saveOrdersMatrix = () => {
+    localStorage.setItem('orders_matrix', JSON.stringify(ordersMatrixRows));
+    setOrdersMatrixDirty(false);
+    window.dispatchEvent(new Event('storage'));
   };
 
   const updateOrdersCell = (rowIdx, key, value) => {
@@ -573,17 +551,16 @@ function UsersSettings() {
             <div style={{ display: 'flex', gap: 8 }}>
               {canEditMatrix && <button className="btn-add btn-sm" onClick={() => {
                 const firstRole = ordersMatrixRows && ordersMatrixRows.length > 0 ? ordersMatrixRows[0].role : '';
-                setOrdersMatrixRows(prev => [...(prev || []), { role: firstRole, description: '', ...Object.fromEntries(ORDER_PERMISSION_COLS.map(c => [c.key, 'No'])) }]);
+                setOrdersMatrixRows(prev => [...(prev || []), { role: firstRole, description: '', create_hiring: 'No', create_firing: 'No', create_promotion: 'No', create_adjusting: 'No', create_business_trip: 'No', view_orders: 'No' }]);
                 setOrdersMatrixDirty(true);
               }}>+ Add Row</button>}
               {canEditMatrix && (
-                <button className="btn-primary btn-sm" onClick={saveOrdersMatrix} disabled={!ordersMatrixDirty || ordersMatrixSaving}>
-                  {ordersMatrixSaving ? 'Saving…' : 'Save Changes'}
+                <button className="btn-primary btn-sm" onClick={saveOrdersMatrix} disabled={!ordersMatrixDirty}>
+                  Save Changes
                 </button>
               )}
             </div>
           </div>
-          {ordersMatrixError && <div className="msg-error" style={{ marginBottom: 12 }}>{ordersMatrixError}</div>}
           {!ordersMatrixRows ? (
             <div style={{ padding: '20px 0', color: 'var(--text-4)' }}>Loading…</div>
           ) : (
