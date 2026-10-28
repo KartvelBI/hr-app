@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import EmployeeSearchSelect from '../common/EmployeeSearchSelect';
 
 const now = new Date();
 const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -35,7 +36,7 @@ const monthLabel = (() => {
 
 const EMPTY_FORM = {
   employeeId: '', type: 'OT', amount: '', otRate: '110',
-  otHours: '', currency: '', includeInSalary: true, date: monthLastDay,
+  otHours: '', currency: '', includeInSalary: true, date: monthLastDay, autoDate: true,
 };
 
 export default function QuickUnitModal({ onClose, preselectedType }) {
@@ -127,10 +128,11 @@ export default function QuickUnitModal({ onClose, preselectedType }) {
     setSaving(true); setError('');
     try {
       const amountUSD = toUSD(form.amount, form.currency);
+      const effectiveDate = form.autoDate ? monthLastDay : (form.date || monthLastDay);
       await api.post(`/employees/${form.employeeId}/units`, {
         type: form.type,
         amount: amountUSD,
-        date: form.date || monthLastDay,
+        date: effectiveDate,
         currency: 'USD',
         include_in_salary: form.includeInSalary,
       });
@@ -139,7 +141,7 @@ export default function QuickUnitModal({ onClose, preselectedType }) {
         const empName = emp ? `${emp.first_name} ${emp.last_name}` : '';
         await api.post('/accounting/transfers', {
           client_name: empName, agent_id: null, amount: amountUSD,
-          due_date: form.date || monthLastDay,
+          due_date: effectiveDate,
           description: `${form.type} — ${empName}`, status: 'normal',
         }).catch(() => {});
       }
@@ -235,22 +237,13 @@ export default function QuickUnitModal({ onClose, preselectedType }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 16px' }}>
 
               {/* Employee */}
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div>
                 <label style={LABEL}>{t('orders.employee')} *</label>
-                <select
-                  value={form.employeeId}
-                  onChange={e => setForm(p => ({ ...p, employeeId: e.target.value }))}
-                  required style={INPUT}
-                >
-                  <option value="">{t('orders.selectEmployee')}</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
-                  ))}
-                </select>
+                <EmployeeSearchSelect employees={employees} value={form.employeeId} required placeholder={t('orders.selectEmployee')} onChange={e => setForm(p => ({ ...p, employeeId: e.target.value }))} />
               </div>
 
               {/* Order Type */}
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div>
                 <label style={LABEL}>{t('orders.orderType')}</label>
                 <select
                   value={form.type}
@@ -267,15 +260,26 @@ export default function QuickUnitModal({ onClose, preselectedType }) {
                 </div>
               </div>
 
-              {/* Date */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={LABEL}>Date</label>
-                <input
-                  type="date"
-                  value={form.date || monthLastDay}
-                  onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                  style={INPUT}
-                />
+              {/* Date this should be transferred */}
+              <div>
+                <label style={LABEL}>{t('orders.transferDate')}</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: '1px solid var(--border-2)', borderRadius: 8, background: 'var(--surface-2)', cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.autoDate}
+                    onChange={e => setForm(p => ({ ...p, autoDate: e.target.checked }))}
+                    style={{ width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  {t('orders.nearestTransferDate')} · {new Date(monthLastDay).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </label>
+                {!form.autoDate && (
+                  <input
+                    type="date"
+                    value={form.date || monthLastDay}
+                    onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                    style={{ ...INPUT, marginTop: 8 }}
+                  />
+                )}
               </div>
 
               {/* OT extras */}
