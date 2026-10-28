@@ -1,43 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const { resolveCaller, matrixRows, granted } = require('../middleware/permission');
 
 // GET /api/user-matrix/permissions — current caller's effective permissions (always live from DB)
 router.get('/permissions', async (req, res) => {
   try {
-    let role = null;
-    let ownerId = req.userId;
-
-    if (req.appUserId) {
-      // Member JWT — read live role from app_users
-      const { data: appUser } = await supabase
-        .from('app_users').select('rights, user_id').eq('id', req.appUserId).maybeSingle();
-      if (appUser) { role = appUser.rights; ownerId = appUser.user_id; }
-    } else if (req.user?.email) {
-      // Supabase sub-user — look up by email
-      const { data: appUser } = await supabase
-        .from('app_users').select('rights, user_id').eq('email', req.user.email).maybeSingle();
-      if (appUser) { role = appUser.rights; ownerId = appUser.user_id; }
-    }
-
-    const all = { initiate_transfer: 'Yes', approve_transfer: 'Yes', reject_transfer: 'Yes', view_transactions: 'Yes', cancel_transaction: 'Yes', set_limits: 'Yes', manage_users: 'Yes', audit_reports: 'Yes' };
+    const caller = await resolveCaller(req);
+    const keys = ['initiate_transfer','approve_transfer','reject_transfer','view_transactions','cancel_transaction','set_limits','manage_users','audit_reports'];
+    const all = { ...Object.fromEntries(keys.map((k) => [k, 'Yes'])), transfer_limit: 'Unlimited' };
+    if (caller.missing) return res.json({ isOwner: false, role: null, ...Object.fromEntries(keys.map((k) => [k, 'No'])), transfer_limit: 'N/A' });
 
     // No role = company owner → all allowed
-    if (!role) return res.json({ isOwner: true, role: null, ...all });
+    if (!caller.role) return res.json({ isOwner: true, role: null, ...all });
 
-    const { data: rows } = await supabase
-      .from('user_matrix').select('*').eq('user_id', ownerId).eq('role', role)
-      .order('sort_order', { ascending: true });
-
-    // Role not in matrix → default allow
-    if (!rows || rows.length === 0) return res.json({ isOwner: false, role, ...all });
+    // Same rule as the server-side check: nothing blocked until the matrix is filled;
+    // once it is, a role that isn't in it gets nothing.
+    const { configured, rows } = await matrixRows('user_matrix', caller.ownerId, caller.role);
+    if (!configured) return res.json({ isOwner: false, role: caller.role, ...all });
 
     // If duplicate rows exist for the same role, be permissive: Yes if ANY row says Yes
-    const keys = ['initiate_transfer','approve_transfer','reject_transfer','view_transactions','cancel_transaction','set_limits','manage_users','audit_reports'];
     const perms = {};
-    keys.forEach(k => { perms[k] = rows.some(r => r[k] !== 'No') ? 'Yes' : 'No'; });
+    keys.forEach(k => { perms[k] = granted(rows, k) ? 'Yes' : 'No'; });
+    perms.transfer_limit = rows[0]?.transfer_limit || 'N/A';
 
-    res.json({ isOwner: false, role, ...perms });
+    res.json({ isOwner: false, role: caller.role, ...perms });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -59,6 +46,11 @@ router.get('/', async (req, res) => {
 // PUT /api/user-matrix
 router.put('/', async (req, res) => {
   try {
+    // Only the owner, Super Admins and Admins may change who can do what
+    const caller = await resolveCaller(req);
+    if (caller.missing || (caller.role && caller.role !== 'Super Admin' && caller.role !== 'Admin')) {
+      return res.status(403).json({ error: 'Only an admin can change the Transfers Matrix.' });
+    }
     const { rows } = req.body;
     const { error: delErr } = await supabase
       .from('user_matrix')

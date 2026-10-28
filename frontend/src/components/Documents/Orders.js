@@ -99,38 +99,37 @@ const ORDER_SUBTAB_KEYS = [
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 const DEFAULT_ORDERS_MATRIX = [
-  { role: 'Super Admin',         description: 'Full access to all orders',   create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', view_orders: 'Yes' },
+  { role: 'Super Admin',         description: 'Full access to all orders',   create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', create_advance_payment: 'Yes', create_bonus: 'Yes', create_handover: 'Yes', view_orders: 'Yes' },
   { role: 'Admin',               description: 'Can manage most orders',      create_hiring: 'Yes', create_firing: 'Yes', create_promotion: 'Yes', create_adjusting: 'Yes', create_business_trip: 'Yes', view_orders: 'Yes' },
   { role: 'Member',              description: 'Standard access',             create_hiring: 'No',  create_firing: 'No',  create_promotion: 'No',  create_adjusting: 'No',  create_business_trip: 'Yes', view_orders: 'Own only' },
 ];
 
+// The caller's Orders Matrix permissions, live from the server. One request is
+// shared by every tab; until it answers nothing can be created.
+let ordersPermsCache = null;
+let ordersPermsRequest = null;
+const fetchOrdersPerms = () => {
+  if (!ordersPermsRequest) {
+    ordersPermsRequest = api.get('/orders-matrix/permissions')
+      .then((res) => (ordersPermsCache = res.data))
+      .catch(() => (ordersPermsCache = { ...DEFAULT_ORDERS_MATRIX[0], error: true }))
+      .finally(() => { setTimeout(() => { ordersPermsRequest = null; }, 30000); });
+  }
+  return ordersPermsRequest;
+};
+
 function useOrdersPermissions() {
-  const currentRights = (() => {
-    try { const s = localStorage.getItem('member_user'); return s ? JSON.parse(s).rights : 'Super Admin'; } catch { return 'Super Admin'; }
-  })();
-
-  const [matrix, setMatrix] = useState(() => {
-    try {
-      const local = localStorage.getItem('orders_matrix');
-      return local ? JSON.parse(local) : DEFAULT_ORDERS_MATRIX;
-    } catch {
-      return DEFAULT_ORDERS_MATRIX;
-    }
-  });
-
+  const [perms, setPerms] = useState(() => ordersPermsCache || {});
   useEffect(() => {
-    const sync = () => {
-      try {
-        const local = localStorage.getItem('orders_matrix');
-        setMatrix(local ? JSON.parse(local) : DEFAULT_ORDERS_MATRIX);
-      } catch {}
-    };
-    window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
+    let alive = true;
+    fetchOrdersPerms().then((p) => { if (alive) setPerms(p); });
+    return () => { alive = false; };
   }, []);
-
-  return matrix.find(r => r.role === currentRights) || DEFAULT_ORDERS_MATRIX.find(r => r.role === 'Member') || {};
+  return perms;
 }
+
+// A permission is granted unless it is "No" or missing (same rule as the server)
+const allowed = (value) => value != null && value !== '' && value !== 'No';
 
 // Local Orders (hiring/firing/promotion/etc.) used to be stored under a
 // plain, un-namespaced localStorage key -- since localStorage is scoped per
@@ -292,7 +291,7 @@ function PromotionTab({ employees, registerAdd }) {
   }, []);
 
   const perms = useOrdersPermissions();
-  const canCreate = perms.create_promotion === 'Yes';
+  const canCreate = allowed(perms.create_promotion);
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true); setError(''); };
   useEffect(() => { if (registerAdd) registerAdd.current = openAdd; });
@@ -521,7 +520,7 @@ function HiringTab({ registerAdd }) {
   ];
 
   const perms = useOrdersPermissions();
-  const canCreate = perms.create_hiring === 'Yes';
+  const canCreate = allowed(perms.create_hiring);
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setAccruedInput(''); setActiveTab('info'); setShowForm(true); };
@@ -1543,7 +1542,7 @@ function FiringTab({ employees, registerAdd }) {
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const perms = useOrdersPermissions();
-  const canCreate = perms.create_firing === 'Yes';
+  const canCreate = allowed(perms.create_firing);
 
   const [detailsFor, setDetailsFor] = useState(null);
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true); };
@@ -1900,7 +1899,7 @@ function BusinessTripTab({ employees, registerAdd }) {
   const autoAmount = form.perDiem && days > 0 ? (parseFloat(form.perDiem) * days).toFixed(2) : '';
 
   const perms = useOrdersPermissions();
-  const canCreate = perms.create_business_trip === 'Yes';
+  const canCreate = allowed(perms.create_business_trip);
 
   const mapRecord = (r) => {
     const emp = employees.find(e => e.id === r.employee_id);
@@ -2451,6 +2450,8 @@ function BusinessTripTab({ employees, registerAdd }) {
 
 // ── Advance Payment Tab ───────────────────────────────────────────────────────
 function AdvancePaymentTab({ employees, gelRate, eurRate, registerAdd }) {
+  const ordersPerms = useOrdersPermissions();
+  const canCreate = allowed(ordersPerms.create_advance_payment);
   const { t } = useLanguage();
   const { orders, add, update, remove } = useLocalOrders('hr_advance_payment_orders', o => employees.some(e => e.id === o.employeeId));
   const [showForm, setShowForm] = useState(false);
@@ -2726,7 +2727,7 @@ function AdvancePaymentTab({ employees, gelRate, eurRate, registerAdd }) {
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {orders.length === 0 ? (
-          <EmptyState label="Advance Payment" onAdd={openAdd} />
+          <EmptyState label="Advance Payment" onAdd={canCreate ? openAdd : undefined} />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
@@ -3026,6 +3027,8 @@ function AdvancePaymentTab({ employees, gelRate, eurRate, registerAdd }) {
 
 // ── Bonus Tab (bulk upload) ─────────────────────────────────────────────────────
 function BonusTab({ employees, gelRate, eurRate, registerAdd }) {
+  const ordersPerms = useOrdersPermissions();
+  const canCreate = allowed(ordersPerms.create_bonus);
   const { t } = useLanguage();
   const { orders: localOrders, add, update, remove } = useLocalOrders('hr_bonus_orders', o => (o.entries || []).some(en => employees.some(e => e.id === en.employeeId)));
   const [showForm, setShowForm] = useState(false);
@@ -3339,7 +3342,7 @@ function BonusTab({ employees, gelRate, eurRate, registerAdd }) {
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {orders.length === 0 ? (
-          <EmptyState label="Bonus" onAdd={openNew} />
+          <EmptyState label="Bonus" onAdd={canCreate ? openNew : undefined} />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
@@ -3541,6 +3544,8 @@ function BonusTab({ employees, gelRate, eurRate, registerAdd }) {
 
 // ── Handover Tab ──────────────────────────────────────────────────────────────
 function HandoverTab({ employees, registerAdd }) {
+  const ordersPerms = useOrdersPermissions();
+  const canCreate = allowed(ordersPerms.create_handover);
   const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3634,7 +3639,7 @@ function HandoverTab({ employees, registerAdd }) {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>Loading…</div>
-        ) : orders.length === 0 ? <EmptyState label={t('orders.handover')} onAdd={openAdd} /> : (
+        ) : orders.length === 0 ? <EmptyState label={t('orders.handover')} onAdd={canCreate ? openAdd : undefined} /> : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: 'var(--surface-2)' }}>
@@ -3988,10 +3993,11 @@ export default function Orders() {
   const SUBTAB_CREATE_PERM = {
     hiring: 'create_hiring', firing: 'create_firing', promotion: 'create_promotion',
     adjusting: 'create_adjusting', 'business-trip': 'create_business_trip',
+    'advance-payment': 'create_advance_payment', bonus: 'create_bonus', handover: 'create_handover',
   };
   const canCreateCurrentTab = (() => {
     const permKey = SUBTAB_CREATE_PERM[subTab];
-    return permKey ? perms[permKey] === 'Yes' : true; // advance-payment/handover/bonus have no gate today
+    return permKey ? allowed(perms[permKey]) : true;
   })();
 
   // ── Data loading ────────────────────────────────────────────
@@ -4395,8 +4401,14 @@ export default function Orders() {
         </div>
       )}
 
+      {perms.view_orders === 'No' && (
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13, background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12 }}>
+          Your role{perms.role ? ` "${perms.role}"` : ''} is not allowed to view orders. Ask an admin to change it in Settings → Users &amp; Roles → Orders Matrix.
+        </div>
+      )}
+
       {/* Non-adjusting tabs */}
-      <div key={subTab} className="fp-subtab-enter">
+      {perms.view_orders !== 'No' && <div key={subTab} className="fp-subtab-enter">
         {subTab === 'promotion'        && <PromotionTab employees={employees} registerAdd={addTriggerRef} />}
         {subTab === 'hiring'           && <HiringTab registerAdd={addTriggerRef} />}
         {subTab === 'firing'           && <FiringTab employees={employees} registerAdd={addTriggerRef} />}
@@ -4404,9 +4416,9 @@ export default function Orders() {
         {subTab === 'advance-payment'  && <AdvancePaymentTab employees={employees} gelRate={gelRate} eurRate={eurRate} registerAdd={addTriggerRef} />}
         {subTab === 'handover'         && <HandoverTab employees={employees} registerAdd={addTriggerRef} />}
         {subTab === 'bonus'            && <BonusTab employees={employees} gelRate={gelRate} eurRate={eurRate} registerAdd={addTriggerRef} />}
-      </div>
+      </div>}
 
-      {subTab === 'adjusting' && <>
+      {subTab === 'adjusting' && perms.view_orders !== 'No' && <>
       {/* Orders list */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (

@@ -4,6 +4,18 @@ const supabase = require('../config/supabase');
 const OpenAI = require('openai');
 const pdfParse = require('pdf-parse');
 const { checkPermission } = require('../middleware/permission');
+
+// Transfers Matrix "Transfer Limit" for the caller's role: the number it allows,
+// or null when there is no limit (owner, "Unlimited", "N/A", empty).
+const transferLimitOf = (req) => {
+  const n = parseFloat(String(req.permissionRow?.transfer_limit ?? '').replace(/[,\s]/g, ''));
+  return Number.isFinite(n) ? n : null;
+};
+const overLimitError = (req, amount) => {
+  const limit = transferLimitOf(req);
+  if (limit === null || !(parseFloat(amount) > limit)) return null;
+  return `Your role "${req.resolvedRole}" can send up to ${limit.toLocaleString('en-US')} per transfer.`;
+};
 const { createTransferRecord } = require('../services/transferService');
 const { createNotifications } = require('../services/notificationService');
 const { resolveUserName } = require('../services/userIdentity');
@@ -1095,6 +1107,8 @@ router.post('/auto-transfers', async (req, res) => {
 
 router.post('/transfers', checkPermission('initiate_transfer'), async (req, res) => {
   try {
+    const limitErr = overLimitError(req, req.body.amount);
+    if (limitErr) return res.status(403).json({ error: limitErr });
     const requester_name = await resolveUserName(req);
     const requester_email = req.user?.email || null;
     const data = await createTransferRecord(req.userId, requester_name, requester_email, req.body);
@@ -1104,6 +1118,8 @@ router.post('/transfers', checkPermission('initiate_transfer'), async (req, res)
 
 router.put('/transfers/:id', checkPermission('initiate_transfer'), async (req, res) => {
   try {
+    const limitErr = overLimitError(req, req.body.amount);
+    if (limitErr) return res.status(403).json({ error: limitErr });
     const { client_name, agent_id, amount, due_date, description, status, requester_name, invoice_raw, iban, invoice_number } = req.body;
     const patch = { client_name, agent_id: agent_id || null, amount: parseFloat(amount), due_date, description, status };
     if (requester_name !== undefined) patch.requester_name = requester_name || null;
@@ -1231,6 +1247,8 @@ router.get('/transfer-requests', async (req, res) => {
 
 router.post('/transfer-requests', checkPermission('initiate_transfer'), async (req, res) => {
   try {
+    const limitErr = overLimitError(req, req.body.amount);
+    if (limitErr) return res.status(403).json({ error: limitErr });
     const { requester_name, amount, currency, recipient_name, recipient_account, description } = req.body;
     if (!requester_name || !amount || !recipient_name) {
       return res.status(400).json({ error: 'Requester name, amount and recipient are required.' });
